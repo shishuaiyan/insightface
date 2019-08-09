@@ -22,7 +22,6 @@ center_alpha: 0.9   # center update rate
 alpha: 0.2     # triplet margin
 
 # run params
-
 batch_size: 16
 epoch_num: 100
 
@@ -30,10 +29,10 @@ valid_num: 256          # half pos and half neg
 valid_batch_size: 16
 thresh: 0.2
 below_fpr: 0.001        # fpr should below this
-# paths
 
-train_dir: '~/data/insightface/recognition/train'
-valid_dir: '~/data/insightface/recognition/val'
+# paths
+train_dir: '~/insightface/data/recognition/train'
+valid_dir: '~/insightface/data/recognition/val'
 test_dir:
-ckpt_dir: '~/models/insightface/recognition'
-summary_dir: '~/logs/insightface/recognition/summary'
+ckpt_dir: '~/insightface/models/recognition'
+summary_dir: '~/insightface/logs/recognition/summary'

@@ -14,12 +14,14 @@ class GenerateData:
 
     def __init__(self, config=None):
         self.config = config
+        # paths: [[person0_img0.jpg, person0_img1.jpg], [person1_img0.jpg]]
+        # labels:[[0, 0], [1]]
         self.train_paths, self.train_labels = self._get_path_label(self.config['train_dir'])
         self.valid_paths, _ = self._get_path_label(self.config['valid_dir'])
 
-    @staticmethod
+    @staticmethod   # 声明静态方法，不需要实例化即可调用(实例化后同样可调用)
     def _get_path_label(image_dir):
-        image_dir = os.path.expanduser(image_dir)
+        image_dir = os.path.expanduser(image_dir)   # 把path中包含的"~"和"~user"转换成用户目录
         ids = list(os.listdir(image_dir))
         ids.sort()
         cat_num = len(ids)
@@ -37,7 +39,7 @@ class GenerateData:
     def _preprocess(self, image_path, training=True):
         image_raw = tf.io.read_file(image_path)
         # image = tf.image.decode_image(image_raw)
-        image = tf.image.decode_png(image_raw)
+        image = tf.image.decode_png(image_raw, channels=3)  # 部分图片是rgba，丢弃第四通道值
         image = tf.cast(image, tf.float32)
         image = image / 255
         image = tf.image.resize(image, (self.config['image_size'], self.config['image_size']))
@@ -70,7 +72,7 @@ class GenerateData:
     def get_train_data(self):
         paths, labels = self.train_paths, self.train_labels
         cat_num = len(paths)
-        paths = [path for cls in paths for path in cls]
+        paths = [path for cls in paths for path in cls] # 2 dim -> 1 dim
         labels = [label for cls in labels for label in cls]
         assert (len(paths) == len(labels))
         total = len(paths)
@@ -81,6 +83,9 @@ class GenerateData:
         train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         train_dataset = train_dataset.map(self._preprocess_train, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         train_dataset = train_dataset.batch(self.config['batch_size'])
+        # train_dataset = train_dataset.map(self._preprocess_train,
+        #                                   num_parallel_calls=tf.data.experimental.AUTOTUNE).cache().shuffle(
+        #     total).batch(self.config['batch_size'])   # cache()、num_parallel_calls 用于加快dateset处理速度
 
         return train_dataset, cat_num
 
@@ -203,17 +208,20 @@ def parse_args(argv):
 
 def main():
     import sys
+    import matplotlib.pyplot as plt
     args = parse_args(sys.argv[1:])
     # logger.info(args)
     import yaml
     with open(args.config_path) as cfg:
         config = yaml.load(cfg, Loader=yaml.FullLoader)
     gd = GenerateData(config)
-    # train_data, classes = gd.get_train_data()
-    import matplotlib.pyplot as plt
-    # for img, _ in train_data.take(1):
-    #     plt.imshow(img[0])
-    #     plt.show()
+    # get_train_data
+    train_data, classes = gd.get_train_data()
+    print(classes)
+    print(train_data.take(1))
+    for img, _ in train_data:
+        plt.imshow(img)
+        plt.show()
 
     # val_data = gd.get_val_data(3)
     # for img1, img2, label in val_data:
@@ -223,18 +231,20 @@ def main():
     #
     #     plt.imshow(img2[0])
     #     plt.show()
-    from recognition.backbones.resnet_v1 import ResNet_v1_50
-    from recognition.models.models import MyModel
-    model = MyModel(ResNet_v1_50, embedding_size=config['embedding_size'])
-    triplet_data, _ = gd.get_train_triplets_data(model)
-    for img1, img2, img3 in triplet_data.take(1):
-        plt.imshow(img1[0])
-        plt.show()
 
-        plt.imshow(img2[0])
-        plt.show()
-        plt.imshow(img3[0])
-        plt.show()
+    # get_train_triplets_data
+    # from backbones.resnet_v1 import ResNet_v1_50
+    # from models.models import MyModel
+    # model = MyModel(ResNet_v1_50, embedding_size=config['embedding_size'])
+    # triplet_data, _ = gd.get_train_triplets_data(model)
+    # for img1, img2, img3 in triplet_data.take(1):
+    #     plt.imshow(img1[0])
+    #     plt.show()
+    #
+    #     plt.imshow(img2[0])
+    #     plt.show()
+    #     plt.imshow(img3[0])
+    #     plt.show()
 
 
 if __name__ == '__main__':

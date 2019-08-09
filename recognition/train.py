@@ -38,7 +38,7 @@ class Trainer:
 
         self.train_data, cat_num = self.gd.get_train_data()
         valid_data = self.gd.get_val_data(config['valid_num'])
-        self.model = MyModel(ResNet_v1_50, embedding_size=config['embedding_size'], classes=cat_num)
+        self.model = MyModel(ResNet_v1_50, embedding_size=config['embedding_size'], classes=cat_num)    # 初始化，调用__init__函数
         self.epoch_num = config['epoch_num']
         self.m1 = config['logits_margin1']
         self.m2 = config['logits_margin2']
@@ -116,10 +116,10 @@ class Trainer:
         # with graph_writer.as_default():
         #     tf.compat.v2.summary.trace_export(name="graph_trace", step=0, profiler_outdir=graph_log_dir)
 
-    @tf.function
+    @tf.function    # 将动态图转为静态图以加快程序运行速度，调试时可注释该局并打印中间变量
     def _train_step(self, img, label):
         with tf.GradientTape(persistent=False) as tape:
-            prelogits, dense, norm_dense = self.model(img, training=True)
+            prelogits, dense, norm_dense = self.model(img, training=True)       # 调用call函数
 
             # sm_loss = softmax_loss(dense, label)
             # norm_sm_loss = softmax_loss(norm_dense, label)

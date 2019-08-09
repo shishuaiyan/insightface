@@ -5,7 +5,7 @@ import tensorflow as tf
 tf.enable_eager_execution()
 
 
-class BasicBlock(tf.keras.layers.Layer):
+class BasicBlock(tf.keras.layers.Layer):    # 残差块 building block
 
     def __init__(self, filters=64, strides=(1, 1)):
         super(BasicBlock, self).__init__()
@@ -23,17 +23,17 @@ class BasicBlock(tf.keras.layers.Layer):
         x = self.relu(x)
         x = self.conv2(x)
         x = self.bn2(x, training=training)
-        if x.shape == inputs.shape:
+        if x.shape == inputs.shape:     # 使用1x1卷积处理维度input和res维度不同的情况
             res = inputs
         else:
             res = self.conv3(inputs)
             res = self.bn3(res, training=training)
-        x += res
+        x += res        # 残差
         x = self.relu(x)
         return x
 
 
-class Bottleneck(tf.keras.layers.Layer):
+class Bottleneck(tf.keras.layers.Layer):    # 残差块   bottleneck design(用两个1x1卷积降低参数数目)
 
     def __init__(self, filters=64, strides=(1, 1)):
         super(Bottleneck, self).__init__()
@@ -90,7 +90,7 @@ class ResNet_v1(tf.keras.Model):
         x = self.bn(x, training=training)
         x = self.relu(x)
         x = self.maxpool(x)
-        x = self.blocks1(x, training=training)
+        x = self.blocks1(x, training=training)  # 可使用中间层
         x = self.blocks2(x, training=training)
         x = self.blocks3(x, training=training)
         x = self.blocks4(x, training=training)
@@ -153,8 +153,8 @@ def main():
     train_data, classes = gd.get_train_data()
 
     model = ResNet_v1_50(embedding_size=config['embedding_size'])
-    model.build((None, 112, 112, 3))
-    model.summary()
+    model.build((None, 112, 112, 3))    # 在自定义layers前执行，指定输入数据的shape
+    # model.summary()
     # model = tf.keras.applications.ResNet50(input_shape=(112, 112, 3), include_top=False)
     # model = tf.keras.applications.ResNet50(include_top=True, weights='imagenet')
     # model = tf.keras.applications.ResNet50(include_top=False, input_shape=(224, 224, 3))
@@ -165,9 +165,9 @@ def main():
     # model.summary()
     # tf.keras.utils.plot_model(model, 'my_first_model.png', show_shapes=True)
 
-    # for img, _ in train_data.take(1):
-    #     y = model(img, training=False)
-    #     print(img.shape, img[0].shape, y.shape, y)
+    for img, _ in train_data.take(1):
+        y = model(img, training=False)
+        print(img.shape, img[0].shape, y.shape, y)
 
 
 if __name__ == '__main__':

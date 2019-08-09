@@ -12,13 +12,18 @@ class NormDense(tf.keras.layers.Layer):
         self.classes = classes
 
     def build(self, input_shape):
+        # The build method gets called the first time your layer is used.
+        # Creating variables on build() allows you to make their shape depend
+        # on the input shape and hence removes the need for the user to specify
+        # full shapes. It is possible to create variables during __init__() if
+        # you already know their full shapes.
         self.w = self.add_weight(name='norm_dense_w', shape=(input_shape[-1], self.classes),
                                  initializer='random_normal', trainable=True)
 
     def call(self, inputs, **kwargs):
-        norm_w = tf.nn.l2_normalize(self.w, axis=0)
+        norm_w = tf.nn.l2_normalize(self.w, axis=0)     # norm_w = w/sqrt(sum(w**2))
         x = tf.matmul(inputs, norm_w)
-
+        # print(self.w.shape, inputs.shape, norm_w.shape)             # ->(512, 221) (16, 512) (512, 221)
         return x
 
 
@@ -31,9 +36,10 @@ class MyModel(tf.keras.Model):
 
     @tf.function
     def call(self, inputs, training=False, mask=None):
-        prelogits = self.backbone(inputs, training=training)
-        dense = self.dense(prelogits)
-        norm_dense = self.norm_dense(prelogits)
+        prelogits = self.backbone(inputs, training=training)    # features output by backbone(resnet)
+        dense = self.dense(prelogits)                           # fully connect layer to classify different person
+        norm_dense = self.norm_dense(prelogits)                 # 对比self.dense: Y = X * W + B
+                                                                # self.norm_dense: Y=||X||*||W||*cos(theta) -> Y_ij=||X_i||*||W_j||*cos(theta_ij) 分别对X的行和W的列求二范数
         return prelogits, dense, norm_dense
 
 

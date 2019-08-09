@@ -29,13 +29,13 @@ def arcface_loss(x, normx_cos, labels, m1, m2, m3, s):
     theta = tf.acos(cos_theta)
     mask = tf.one_hot(labels, depth=normx_cos.shape[-1])
     zeros = tf.zeros_like(mask)
-    cond = tf.where(tf.greater(theta * m1 + m3, math.pi), zeros, mask)
+    cond = tf.where(tf.greater(theta * m1 + m3, math.pi), zeros, mask)      # 为保证cos()单调递减，需限制角度小于pi：若theta*m1+m3>pi, cond=zeros; else: cond=mask
     cond = tf.cast(cond, dtype=tf.bool)
     m1_theta_plus_m3 = tf.where(cond, theta * m1 + m3, theta)
     cos_m1_theta_plus_m3 = tf.cos(m1_theta_plus_m3)
     prelogits = tf.where(cond, cos_m1_theta_plus_m3 - m2, cos_m1_theta_plus_m3) * s
-
-    cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)  # do softmax
+    # from_logits=False: loss = -log(0.9/(0.9+0.1))     # from_logits=True: loss = -log(exp(0.9)/(exp(0.9)+exp(0.1)))
+    cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     loss = cce(labels, prelogits)
 
     return loss
